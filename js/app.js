@@ -1102,27 +1102,40 @@ class PulseTrackerApp {
   async syncCloudData() {
     if (!window.supabaseService || !window.supabaseService.isConnected) return;
 
+    const user = await window.supabaseService.getCurrentUser();
+    if (!user) return;
+
     try {
-      // 1. Sincroniza Perfil da Nuvem
+      // 1. Sincroniza Perfil com a Nuvem
       const cloudProfile = await window.supabaseService.fetchProfile();
       if (cloudProfile && cloudProfile.name) {
         window.storageEngine.saveUserProfile(cloudProfile);
         this.loadUserProfileUi();
       } else {
-        // Se ainda não tem no Supabase, sobe o local
         const localProfile = window.storageEngine.getUserProfile();
-        if (localProfile && localProfile.name) {
+        if (localProfile && (localProfile.name || localProfile.nickname)) {
           await window.supabaseService.saveProfile(localProfile);
         }
       }
 
-      // 2. Sincroniza Atividades Privadas do Usuário
+      // 2. Busca atividades existentes no Supabase
       const cloudActivities = await window.supabaseService.fetchActivities();
-      if (cloudActivities && cloudActivities.length > 0) {
-        const localList = window.storageEngine.getActivities();
-        const mergedMap = new Map();
+      const cloudIdSet = new Set(cloudActivities.map(a => a.id));
 
-        cloudActivities.forEach(a => mergedMap.set(a.id, a));
+      // 3. Envia para o Supabase quaisquer atividades locais que ainda não estejam lá
+      const localList = window.storageEngine.getActivities();
+      for (const localAct of localList) {
+        if (!cloudIdSet.has(localAct.id)) {
+          console.log('Enviando atividade local para o Supabase:', localAct.title);
+          await window.supabaseService.saveActivity(localAct);
+        }
+      }
+
+      // 4. Recarrega a lista mesclada e atualiza o histórico na tela
+      const updatedCloudActivities = await window.supabaseService.fetchActivities();
+      if (updatedCloudActivities && updatedCloudActivities.length > 0) {
+        const mergedMap = new Map();
+        updatedCloudActivities.forEach(a => mergedMap.set(a.id, a));
         localList.forEach(a => mergedMap.set(a.id, a));
 
         const mergedList = Array.from(mergedMap.values()).sort((a, b) => b.timestamp - a.timestamp);
