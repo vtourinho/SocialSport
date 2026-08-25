@@ -20,12 +20,18 @@ class SupabaseService {
   loadConfig() {
     try {
       const saved = localStorage.getItem(this.CONFIG_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          url: (parsed.url || '').trim().replace(/\/+$/, ''),
+          anonKey: (parsed.anonKey || '').trim()
+        };
+      }
     } catch (e) {
       console.warn('Erro ao ler config do Supabase:', e);
     }
     return {
-      url: '',
+      url: 'https://ecnoikcjvdhjueqtdovd.supabase.co',
       anonKey: ''
     };
   }
@@ -33,7 +39,7 @@ class SupabaseService {
   // Salva novas credenciais de conexão do Supabase
   saveConfig(url, anonKey) {
     this.config = {
-      url: (url || '').trim(),
+      url: (url || '').trim().replace(/\/+$/, ''),
       anonKey: (anonKey || '').trim()
     };
     try {
@@ -290,12 +296,13 @@ class SupabaseService {
         .select();
 
       if (error) {
-        console.warn('Aviso ao salvar atividade no Supabase:', error.message);
+        console.error('❌ Erro Supabase ao salvar atividade:', error.message, error.details, error.hint);
         return null;
       }
+      console.log('✅ Atividade salva com sucesso no Supabase:', data);
       return data && data[0] ? data[0] : null;
     } catch (e) {
-      console.warn('Erro ao salvar atividade no Supabase:', e);
+      console.error('❌ Exceção ao salvar atividade no Supabase:', e);
       return null;
     }
   }
