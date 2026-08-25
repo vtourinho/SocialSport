@@ -738,7 +738,29 @@ class PulseTrackerApp {
     const btnCloseSettings = document.getElementById('btn-close-settings');
     const btnCloseSettingsFooter = document.getElementById('btn-close-settings-footer');
 
+    // Atualização dos campos do Supabase
+    const updateSupabaseUi = () => {
+      const inputUrl = document.getElementById('input-supabase-url');
+      const inputKey = document.getElementById('input-supabase-key');
+      const statusPill = document.getElementById('supabase-status-badge');
+      const statusLabel = document.getElementById('supabase-status-label');
+
+      if (window.supabaseService && window.supabaseService.config) {
+        if (inputUrl) inputUrl.value = window.supabaseService.config.url || '';
+        if (inputKey) inputKey.value = window.supabaseService.config.anonKey || '';
+
+        if (window.supabaseService.isConnected) {
+          if (statusPill) statusPill.classList.add('connected');
+          if (statusLabel) statusLabel.textContent = '🟢 Conectado';
+        } else {
+          if (statusPill) statusPill.classList.remove('connected');
+          if (statusLabel) statusLabel.textContent = 'Offline (Local)';
+        }
+      }
+    };
+
     btnOpenSettings.addEventListener('click', () => {
+      updateSupabaseUi();
       modalSettings.style.display = 'flex';
     });
 
@@ -757,6 +779,41 @@ class PulseTrackerApp {
     toggleBeeps.addEventListener('change', (e) => {
       window.audioCoach.beepsEnabled = e.target.checked;
     });
+
+    // Botão Salvar e Conectar Supabase
+    const btnSaveSupabase = document.getElementById('btn-save-supabase');
+    const feedbackMsg = document.getElementById('supabase-feedback-msg');
+
+    if (btnSaveSupabase) {
+      btnSaveSupabase.addEventListener('click', async () => {
+        const url = document.getElementById('input-supabase-url').value.trim();
+        const anonKey = document.getElementById('input-supabase-key').value.trim();
+
+        btnSaveSupabase.disabled = true;
+        btnSaveSupabase.textContent = 'Testando Conexão...';
+        if (feedbackMsg) feedbackMsg.style.display = 'none';
+
+        window.supabaseService.saveConfig(url, anonKey);
+        const result = await window.supabaseService.testConnection();
+
+        btnSaveSupabase.disabled = false;
+        btnSaveSupabase.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Salvar e Conectar Supabase';
+
+        if (feedbackMsg) {
+          feedbackMsg.style.display = 'block';
+          feedbackMsg.className = `supabase-feedback-msg ${result.success ? 'success' : 'error'}`;
+          feedbackMsg.textContent = result.message;
+        }
+
+        updateSupabaseUi();
+
+        // Se conectou, sincroniza perfil do usuário imediatamente
+        if (result.success) {
+          const profile = window.storageEngine.getUserProfile();
+          window.supabaseService.saveProfile(profile);
+        }
+      });
+    }
   }
 
   /* ==========================================================================

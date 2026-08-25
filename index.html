@@ -711,16 +711,44 @@
         </div>
 
         <div class="settings-group">
+          <div class="settings-group-header">
+            <h4>Banco de Dados na Nuvem (Supabase)</h4>
+            <span class="supabase-status-pill" id="supabase-status-badge">
+              <span class="status-dot-mini" id="supabase-status-dot"></span>
+              <span id="supabase-status-label">Offline (Local)</span>
+            </span>
+          </div>
+          <p class="setting-hint">Sincronize seus treinos e perfil de atleta na nuvem PostgreSQL do Supabase.</p>
+          
+          <div class="form-group" style="margin-top: 8px;">
+            <label for="input-supabase-url">URL do Projeto Supabase</label>
+            <input type="url" id="input-supabase-url" placeholder="https://xyzcompany.supabase.co" class="custom-input">
+          </div>
+
+          <div class="form-group">
+            <label for="input-supabase-key">Chave Pública Anônima (Anon Key)</label>
+            <input type="password" id="input-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="custom-input">
+          </div>
+
+          <div id="supabase-feedback-msg" class="supabase-feedback-msg" style="display: none;"></div>
+
+          <button type="button" id="btn-save-supabase" class="btn-secondary-action" style="width: 100%; margin-top: 6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            Salvar e Conectar Supabase
+          </button>
+        </div>
+
+        <div class="settings-group">
           <h4>Sobre o App</h4>
           <div class="about-card">
-            <strong>PulseTracker Pro</strong>
-            <p>Versão 2.4.0 • Inspirado nos melhores recursos de telemetria Nike Run Club & Strava.</p>
+            <strong>SocialSport / PulseTracker Pro</strong>
+            <p>Versão 2.7.0 • Integrado com Supabase PostgreSQL, Vercel & GitHub.</p>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button id="btn-close-settings-footer" class="btn-primary-action" style="width:100%">Salvar e Fechar</button>
+        <button id="btn-close-settings-footer" class="btn-primary-action" style="width:100%">Fechar</button>
       </div>
     </div>
   </div>
@@ -865,12 +893,16 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Modular Scripts -->
-  <script src="js/audio.js?v=2.6.0"></script>
-  <script src="js/telemetry.js?v=2.6.0"></script>
-  <script src="js/map.js?v=2.6.0"></script>
-  <script src="js/simulator.js?v=2.6.0"></script>
-  <script src="js/storage.js?v=2.6.0"></script>
-  <script src="js/app.js?v=2.6.0"></script>
+  <script src="js/audio.js?v=2.7.0"></script>
+  <script src="js/telemetry.js?v=2.7.0"></script>
+  <script src="js/map.js?v=2.7.0"></script>
+  <script src="js/simulator.js?v=2.7.0"></script>
+  <script src="js/supabase.js?v=2.7.0"></script>
+  <script src="js/storage.js?v=2.7.0"></script>
+  <script src="js/app.js?v=2.7.0"></script>
 </body>
 </html>

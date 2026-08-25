@@ -35,10 +35,17 @@ class StorageEngine {
     };
   }
 
-  // Salva o perfil do usuário
+  // Salva o perfil do usuário (Local + Supabase)
   saveUserProfile(profile) {
     try {
       localStorage.setItem(this.PROFILE_KEY, JSON.stringify(profile));
+      
+      // Sincroniza em segundo plano com o Supabase se configurado
+      if (window.supabaseService && typeof window.supabaseService.saveProfile === 'function') {
+        window.supabaseService.saveProfile(profile).catch(err => {
+          console.warn('Supabase profile sync background error:', err);
+        });
+      }
       return true;
     } catch (e) {
       console.error('Erro ao salvar perfil:', e);
@@ -57,13 +64,20 @@ class StorageEngine {
     }
   }
 
-  // Salva uma nova atividade
+  // Salva uma nova atividade (Local + Supabase)
   saveActivity(activity) {
     try {
       const list = this.getActivities();
       // Insere no início da lista (mais recente primeiro)
       list.unshift(activity);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
+
+      // Sincroniza em segundo plano com o Supabase se configurado
+      if (window.supabaseService && typeof window.supabaseService.saveActivity === 'function') {
+        window.supabaseService.saveActivity(activity).catch(err => {
+          console.warn('Supabase activity sync background error:', err);
+        });
+      }
       return true;
     } catch (e) {
       console.error('Erro ao salvar atividade:', e);
