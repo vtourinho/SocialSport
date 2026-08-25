@@ -32,7 +32,21 @@ class PulseTrackerApp {
     this.bindSummaryEvents();
     this.bindModalEvents();
     this.bindProfileEvents();
+    this.bindAuthEvents();
     this.initPwa();
+
+    // Registra escuta de mudanças de autenticação do Supabase
+    if (window.supabaseService) {
+      window.supabaseService.onAuthStateChange((event, session, user) => {
+        this.handleAuthChange(event, user);
+      });
+      window.supabaseService.getCurrentUser().then(user => {
+        this.updateAuthUi(user);
+        if (user) {
+          this.syncCloudData();
+        }
+      });
+    }
 
     // Registra callbacks no motor de telemetria
     window.telemetryEngine.onPositionUpdate = (point, metrics) => {
@@ -1041,6 +1055,205 @@ class PulseTrackerApp {
         navigator.serviceWorker.register('./sw.js').catch(err => {
           console.warn('Service Worker registration skipped:', err);
         });
+      });
+    }
+  }
+
+  /* ==========================================================================
+     10. SISTEMA DE AUTENTICAÇÃO E PRIVACIDADE DE ATIVIDADES (SUPABASE AUTH)
+     ========================================================================== */
+  updateAuthUi(user) {
+    const headerAuthLabel = document.getElementById('header-auth-label');
+    const formAuth = document.getElementById('form-user-auth');
+    const loggedPanel = document.getElementById('auth-user-logged-panel');
+    const loggedEmail = document.getElementById('logged-user-email');
+    const loggedAvatar = document.getElementById('logged-avatar-preview');
+    const authModalTitle = document.getElementById('auth-modal-title');
+    const authTabsContainer = document.getElementById('auth-tabs-container');
+
+    if (user) {
+      if (headerAuthLabel) headerAuthLabel.textContent = user.user_metadata?.name || user.email?.split('@')[0] || 'Minha Conta';
+      if (formAuth) formAuth.style.display = 'none';
+      if (authTabsContainer) authTabsContainer.style.display = 'none';
+      if (loggedPanel) loggedPanel.style.display = 'block';
+      if (loggedEmail) loggedEmail.textContent = user.email;
+      if (authModalTitle) authModalTitle.textContent = 'Conta Conectada';
+
+      const profile = window.storageEngine.getUserProfile();
+      if (loggedAvatar && profile.photo) {
+        loggedAvatar.innerHTML = `<img src="${profile.photo}" alt="Avatar">`;
+      }
+    } else {
+      if (headerAuthLabel) headerAuthLabel.textContent = 'Entrar';
+      if (formAuth) formAuth.style.display = 'block';
+      if (authTabsContainer) authTabsContainer.style.display = 'flex';
+      if (loggedPanel) loggedPanel.style.display = 'none';
+      if (authModalTitle) authModalTitle.textContent = 'Conta SocialSport';
+    }
+  }
+
+  handleAuthChange(event, user) {
+    this.updateAuthUi(user);
+    if (user) {
+      this.syncCloudData();
+    }
+  }
+
+  async syncCloudData() {
+    if (!window.supabaseService || !window.supabaseService.isConnected) return;
+
+    try {
+      // 1. Sincroniza Perfil da Nuvem
+      const cloudProfile = await window.supabaseService.fetchProfile();
+      if (cloudProfile && cloudProfile.name) {
+        window.storageEngine.saveUserProfile(cloudProfile);
+        this.loadUserProfileUi();
+      } else {
+        // Se ainda não tem no Supabase, sobe o local
+        const localProfile = window.storageEngine.getUserProfile();
+        if (localProfile && localProfile.name) {
+          await window.supabaseService.saveProfile(localProfile);
+        }
+      }
+
+      // 2. Sincroniza Atividades Privadas do Usuário
+      const cloudActivities = await window.supabaseService.fetchActivities();
+      if (cloudActivities && cloudActivities.length > 0) {
+        const localList = window.storageEngine.getActivities();
+        const mergedMap = new Map();
+
+        cloudActivities.forEach(a => mergedMap.set(a.id, a));
+        localList.forEach(a => mergedMap.set(a.id, a));
+
+        const mergedList = Array.from(mergedMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+        localStorage.setItem(window.storageEngine.STORAGE_KEY, JSON.stringify(mergedList));
+        this.updateHistoryUi();
+      }
+    } catch (e) {
+      console.warn('Erro na sincronização de dados com a nuvem:', e);
+    }
+  }
+
+  bindAuthEvents() {
+    const modalAuth = document.getElementById('modal-auth');
+    const btnOpenAuth = document.getElementById('btn-open-auth');
+    const btnCloseAuth = document.getElementById('btn-close-auth');
+    const formAuth = document.getElementById('form-user-auth');
+    const tabLogin = document.getElementById('tab-auth-login');
+    const tabSignup = document.getElementById('tab-auth-signup');
+    const groupName = document.getElementById('group-auth-name');
+    const btnSubmitAuth = document.getElementById('btn-submit-auth');
+    const feedbackMsg = document.getElementById('auth-feedback-msg');
+    const btnLogout = document.getElementById('btn-logout-account');
+    const btnSyncCloud = document.getElementById('btn-sync-cloud');
+
+    let currentTab = 'login';
+
+    if (btnOpenAuth) {
+      btnOpenAuth.addEventListener('click', async () => {
+        const user = await window.supabaseService.getCurrentUser();
+        this.updateAuthUi(user);
+        modalAuth.style.display = 'flex';
+      });
+    }
+
+    if (btnCloseAuth) {
+      btnCloseAuth.addEventListener('click', () => {
+        modalAuth.style.display = 'none';
+      });
+    }
+
+    // Alternador de Abas (Entrar vs Criar Conta)
+    if (tabLogin && tabSignup) {
+      tabLogin.addEventListener('click', () => {
+        currentTab = 'login';
+        tabLogin.classList.add('active');
+        tabSignup.classList.remove('active');
+        if (groupName) groupName.style.display = 'none';
+        if (btnSubmitAuth) btnSubmitAuth.textContent = 'Entrar na Minha Conta';
+        if (feedbackMsg) feedbackMsg.style.display = 'none';
+      });
+
+      tabSignup.addEventListener('click', () => {
+        currentTab = 'signup';
+        tabSignup.classList.add('active');
+        tabLogin.classList.remove('active');
+        if (groupName) groupName.style.display = 'block';
+        if (btnSubmitAuth) btnSubmitAuth.textContent = 'Criar Minha Conta Segura';
+        if (feedbackMsg) feedbackMsg.style.display = 'none';
+      });
+    }
+
+    // Formulário de Login / Cadastro
+    if (formAuth) {
+      formAuth.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('auth-input-email').value.trim();
+        const password = document.getElementById('auth-input-password').value;
+        const name = document.getElementById('auth-input-name')?.value.trim() || '';
+
+        if (!email || !password) return;
+
+        btnSubmitAuth.disabled = true;
+        btnSubmitAuth.textContent = 'Processando...';
+        if (feedbackMsg) feedbackMsg.style.display = 'none';
+
+        let result;
+        if (currentTab === 'signup') {
+          result = await window.supabaseService.signUp(email, password, { name });
+        } else {
+          result = await window.supabaseService.signIn(email, password);
+        }
+
+        btnSubmitAuth.disabled = false;
+        btnSubmitAuth.textContent = currentTab === 'signup' ? 'Criar Minha Conta Segura' : 'Entrar na Minha Conta';
+
+        if (!result.success) {
+          if (feedbackMsg) {
+            feedbackMsg.style.display = 'block';
+            feedbackMsg.className = 'supabase-feedback-msg error';
+            feedbackMsg.textContent = result.message;
+          }
+        } else {
+          if (feedbackMsg) {
+            feedbackMsg.style.display = 'block';
+            feedbackMsg.className = 'supabase-feedback-msg success';
+            feedbackMsg.textContent = currentTab === 'signup' 
+              ? 'Conta criada com sucesso! Verifique seu email se a confirmação estiver ativada.' 
+              : 'Login realizado com sucesso! Suas atividades estão sincronizadas e protegidas.';
+          }
+
+          const user = await window.supabaseService.getCurrentUser();
+          this.updateAuthUi(user);
+          await this.syncCloudData();
+
+          setTimeout(() => {
+            modalAuth.style.display = 'none';
+          }, 1200);
+        }
+      });
+    }
+
+    // Botão de Logout
+    if (btnLogout) {
+      btnLogout.addEventListener('click', async () => {
+        await window.supabaseService.signOut();
+        this.updateAuthUi(null);
+        modalAuth.style.display = 'none';
+        alert('Sessão encerrada com sucesso.');
+      });
+    }
+
+    // Botão de Sincronização Manual
+    if (btnSyncCloud) {
+      btnSyncCloud.addEventListener('click', async () => {
+        btnSyncCloud.disabled = true;
+        btnSyncCloud.textContent = 'Sincronizando...';
+        await this.syncCloudData();
+        btnSyncCloud.disabled = false;
+        btnSyncCloud.textContent = 'Sincronizar Minhas Atividades';
+        alert('Suas atividades foram sincronizadas com a nuvem Supabase!');
       });
     }
   }

@@ -2591,5 +2591,115 @@ body.mode-bike .view-tab-btn.active {
   color: #ef4444;
 }
 
+/* ==========================================================================
+   MODAL DE AUTENTICAÇÃO (LOGIN & SIGNUP COM RLS)
+   ========================================================================== */
+.modal-auth-card {
+  max-width: 420px;
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.auth-tab-btn.active {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-md);
+  color: #10b981;
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.auth-security-badge svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.logged-user-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+
+.logged-avatar-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border: 2px solid var(--run-accent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.logged-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logged-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logged-user-details strong {
+  font-size: 0.92rem;
+  color: #ffffff;
+}
+
+.user-logged-badge {
+  font-size: 0.72rem;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.auth-btn {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.auth-btn:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+
 
 
