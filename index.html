@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0f12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Acompanhe seu desempenho de corrida e bicicleta em tempo real com mapa, pace instantâneo, velocidade média e splits por km.">
+  <title>PulseTracker - Corrida e Ciclismo em Tempo Real</title>
+
+  <!-- Google Fonts: Inter & Space Grotesk & Bebas Neue -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS for Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=2.6.0">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="mode-run">
+
+  <!-- ======================================================== -->
+  <!-- 1. TELA DE PRÉ-TREINO (SETUP & SELEÇÃO DE MODALIDADE)    -->
+  <!-- ======================================================== -->
+  <section id="screen-setup" class="screen active">
+    <!-- Header Superior -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>PULSE<span class="brand-accent">TRACKER</span></h1>
+          <span class="brand-tag">PRO TELEMETRY</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-open-profile" class="icon-btn profile-btn" title="Perfil do Atleta" aria-label="Perfil do Atleta">
+          <div class="profile-avatar-mini" id="header-avatar-preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="btn-label-desktop" id="header-user-nickname">Meu Perfil</span>
+        </button>
+        <button id="btn-open-history" class="icon-btn" title="Histórico de Treinos" aria-label="Histórico de Treinos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="btn-label-desktop">Histórico</span>
+        </button>
+        <button id="btn-open-settings" class="icon-btn" title="Configurações" aria-label="Configurações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="setup-container">
+      <!-- Banner de Boas-Vindas / Resumo Rápido -->
+      <div class="quick-stats-hero">
+        <div class="stats-hero-content">
+          <span class="hero-badge">Pronto para Treinar</span>
+          <h2 class="hero-title">Escolha sua Atividade</h2>
+          <p class="hero-desc">Telemetria ao vivo com mapa, pace instantâneo, velocidade média e splits por km.</p>
+        </div>
+      </div>
+
+      <!-- CARD DE CADASTRO DO ATLETA (DADOS BIOMÉTRICOS & CALORIAS) -->
+      <div class="athlete-profile-card" id="athlete-profile-card">
+        <div class="athlete-card-left">
+          <div class="athlete-card-avatar" id="setup-avatar-preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="athlete-card-info">
+            <div class="athlete-card-name" id="setup-user-name">Atleta (Clique para Cadastrar)</div>
+            <div class="athlete-card-sub" id="setup-user-details">Idade, Altura, Peso, Cidade e Foto</div>
+          </div>
+        </div>
+        <button id="btn-edit-profile-card" class="btn-setup-profile" type="button">
+          <span>Cadastrar Dados</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- SELETOR DE MODALIDADE (CORRIDA OU BIKE) -->
+      <div class="activity-mode-cards">
+        <!-- Card Corrida -->
+        <div class="mode-card active" id="card-mode-run" data-mode="run">
+          <div class="mode-card-header">
+            <div class="mode-icon run-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14l-4 4M10 21l-3-3 5-5M15 4a2 2 0 100-4 2 2 0 000 4zM4 17l4-4 2 2 4-4"/></svg>
+            </div>
+            <span class="mode-pill">Modo Pace</span>
+          </div>
+          <h3 class="mode-title">Corrida</h3>
+          <p class="mode-subtitle">Ritmo min/km, velocidade, pace por km e cadência estimada.</p>
+          <div class="mode-metrics-preview">
+            <span>⏱️ Tempo</span> • <span>⚡ Pace Atual</span> • <span>📍 Splits 1km</span>
+          </div>
+        </div>
+
+        <!-- Card Bicicleta -->
+        <div class="mode-card" id="card-mode-bike" data-mode="bike">
+          <div class="mode-card-header">
+            <div class="mode-icon bike-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2zm-3 11.5L8.5 7.5l4-2.5 3 4.5h3.5M5.5 17.5l3-10M12 17.5V14"/></svg>
+            </div>
+            <span class="mode-pill">Modo Velocidade</span>
+          </div>
+          <h3 class="mode-title">Bicicleta</h3>
+          <p class="mode-subtitle">Velocidade em km/h, velocímetro dinâmico e média por km.</p>
+          <div class="mode-metrics-preview">
+            <span>⏱️ Tempo</span> • <span>🚀 Vel. Atual</span> • <span>📊 Vel. Média</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPÇÕES DE CONFIGURAÇÃO DO TREINO -->
+      <div class="setup-section-box">
+        <h4 class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Meta do Treino (Opcional)
+        </h4>
+        <div class="goal-chips" id="goal-selector">
+          <button class="chip active" data-goal="free">Treino Livre</button>
+          <button class="chip" data-goal="dist-3">3 km</button>
+          <button class="chip" data-goal="dist-5">5 km</button>
+          <button class="chip" data-goal="dist-10">10 km</button>
+          <button class="chip" data-goal="time-30">30 min</button>
+          <button class="chip" data-goal="time-60">60 min</button>
+        </div>
+      </div>
+
+      <!-- FONTE DO GPS (REAL VS SIMULAÇÃO PARA TESTES) -->
+      <div class="setup-section-box gps-box">
+        <div class="gps-box-header">
+          <div>
+            <h4 class="section-title" style="margin-bottom: 2px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              Fonte de Localização (GPS)
+            </h4>
+            <p class="section-desc">Selecione GPS Real no celular ou o Simulador para testar agora no computador.</p>
+          </div>
+          <div class="gps-status-badge" id="gps-status-indicator">
+            <span class="status-dot"></span>
+            <span class="status-text">GPS Pronto</span>
+          </div>
+        </div>
+
+        <div class="gps-mode-toggle">
+          <label class="gps-radio-option">
+            <input type="radio" name="gps-source" value="real" id="gps-source-real" checked>
+            <div class="radio-card">
+              <div class="radio-icon">🛰️</div>
+              <div class="radio-info">
+                <strong>GPS Real (Dispositivo)</strong>
+                <span>Usa sensor de satélite de alta precisão do seu celular/PC</span>
+              </div>
+            </div>
+          </label>
+
+          <label class="gps-radio-option">
+            <input type="radio" name="gps-source" value="simulated" id="gps-source-sim">
+            <div class="radio-card">
+              <div class="radio-icon">🎮</div>
+              <div class="radio-info">
+                <strong>Simulador de Rota (Demonstração)</strong>
+                <span>Simula percurso real com variações de velocidade e splits automáticos</span>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Seletor de Rota Simulada -->
+        <div class="sim-routes-container" id="sim-routes-container" style="display: none;">
+          <label for="select-sim-route" class="field-label">Escolha a Rota de Demonstração:</label>
+          <select id="select-sim-route" class="custom-select">
+            <option value="ibirapuera">🌳 Parque Ibirapuera - Circuito 5.2 km (São Paulo)</option>
+            <option value="copacabana">🏖️ Orla Copacabana & Ipanema - 10.4 km (Rio de Janeiro)</option>
+            <option value="vilalobos">🚴 Ciclovia Marginal & Vila-Lobos - 18.0 km (Ciclismo)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- OPÇÕES ADICIONAIS: VOICE COACH & WAKELOCK -->
+      <div class="setup-toggles-grid">
+        <label class="toggle-card">
+          <div class="toggle-info">
+            <span class="toggle-title">🔊 Audio Coach em Português</span>
+            <span class="toggle-desc">Avisa o tempo e pace a cada km completado</span>
+          </div>
+          <input type="checkbox" id="toggle-voice-coach" checked class="switch-input">
+          <span class="switch-slider"></span>
+        </label>
+
+        <label class="toggle-card">
+          <div class="toggle-info">
+            <span class="toggle-title">📱 Manter Tela Ligada</span>
+            <span class="toggle-desc">Evita que o celular apague a tela durante o exercício</span>
+          </div>
+          <input type="checkbox" id="toggle-wakelock" checked class="switch-input">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <!-- BOTÃO DE INÍCIO PRINCIPAL -->
+      <div class="start-action-container">
+        <button id="btn-start-workout" class="btn-start-workout pulse-glow">
+          <div class="btn-start-inner">
+            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span class="btn-text">INICIAR ATIVIDADE</span>
+          </div>
+          <div class="btn-start-sub" id="btn-start-mode-label">MODO: CORRIDA 🏃‍♂️</div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 2. TELA DE CONTAGEM REGRESSIVA (3.. 2.. 1.. VAI!)        -->
+  <!-- ======================================================== -->
+  <div id="screen-countdown" class="overlay-screen">
+    <div class="countdown-circle">
+      <div class="countdown-number" id="countdown-number">3</div>
+      <div class="countdown-label" id="countdown-label">Prepare-se...</div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 3. TELA DE TREINO ATIVO (MAPA NO FUNDO + HUD DE TELEMETRIA)-->
+  <!-- ======================================================== -->
+  <section id="screen-workout" class="screen">
+    <!-- MAPA NO FUNDO (100% TELA) -->
+    <div id="map-container" class="map-background"></div>
+
+    <!-- HUD SUPERIOR (CONTROLES E STATUS) -->
+    <div class="workout-top-hud">
+      <div class="top-hud-left">
+        <div class="mode-badge-live" id="live-mode-badge">
+          <span class="mode-badge-icon" id="live-mode-icon">🏃‍♂️</span>
+          <span class="mode-badge-name" id="live-mode-name">CORRIDA</span>
+        </div>
+        <div class="gps-accuracy-pill" id="live-gps-pill">
+          <span class="pulse-dot"></span>
+          <span id="live-gps-text">GPS: Ótimo (4m)</span>
+        </div>
+      </div>
+
+      <div class="top-hud-right">
+        <!-- Alternador de Tamanho do Mapa (Expandido / Normal) -->
+        <button id="btn-toggle-map-expand" class="hud-mini-btn" title="Expandir/Reduzir Mapa" aria-label="Expandir Mapa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
+        <!-- Alternador de Estilo do Mapa -->
+        <button id="btn-toggle-map-style" class="hud-mini-btn" title="Alternar Mapa (Escuro / Rua / Satélite)" aria-label="Estilo do Mapa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        </button>
+        <!-- Botão de Centralizar no Atleta -->
+        <button id="btn-recenter-map" class="hud-mini-btn active" title="Centralizar Posição" aria-label="Centralizar Posição">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+        </button>
+        <!-- Botão de Trava de Tela -->
+        <button id="btn-lock-screen" class="hud-mini-btn" title="Travar Tela contra Toques" aria-label="Travar Tela">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- BANNER DE NOTIFICAÇÃO DE SPLIT (POP-UP AO COMPLETAR 1KM) -->
+    <div id="split-toast" class="split-toast">
+      <div class="split-toast-icon">🏆</div>
+      <div class="split-toast-content">
+        <strong id="split-toast-title">Km 1 Completado!</strong>
+        <span id="split-toast-stats">Tempo: 05:12 • Ritmo: 5'12"/km</span>
+      </div>
+    </div>
+
+    <!-- CONTROLE DE SIMULAÇÃO (QUANDO EM MODO SIMULADOR) -->
+    <div id="sim-control-bar" class="sim-control-bar" style="display: none;">
+      <span class="sim-pill">🎮 SIMULAÇÃO</span>
+      <div class="sim-speed-btns">
+        <button class="sim-speed-btn active" data-speed="1">1x</button>
+        <button class="sim-speed-btn" data-speed="2">2x</button>
+        <button class="sim-speed-btn" data-speed="5">5x</button>
+        <button class="sim-speed-btn" data-speed="10">10x</button>
+      </div>
+      <button id="btn-sim-toggle-pause" class="sim-pause-btn">Pausar Sim</button>
+    </div>
+
+    <!-- SELETOR DE VISUALIZAÇÃO DURANTE O TREINO (MAPA VS TELEMETRIA) -->
+    <div class="workout-view-tabs-container">
+      <div class="workout-view-tabs">
+        <button class="view-tab-btn active" id="tab-btn-map" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          <span>🗺️ Modo Mapa</span>
+        </button>
+        <button class="view-tab-btn" id="tab-btn-telemetry" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <span>📊 Painel Completo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PAINEL PRINCIPAL DE TELEMETRIA EM TEMPO REAL (HUD INFERIOR) -->
+    <div class="workout-dashboard-hud">
+      <!-- HEADER DO DASHBOARD COM TEMPO E STATUS -->
+      <div class="hud-time-row">
+        <div class="time-box">
+          <span class="hud-label">TEMPO DECORRIDO</span>
+          <div class="hud-time-display" id="hud-timer">00:00:00</div>
+        </div>
+        <div class="status-indicator-live" id="hud-status-badge">
+          <span class="live-blink"></span>
+          <span id="hud-status-text">EM ANDAMENTO</span>
+        </div>
+      </div>
+
+      <!-- LAYOUT ESPECÍFICO PARA MODO CORRIDA (8 MÉTRICAS EM TEMPO REAL) -->
+      <div id="telemetry-run-layout" class="telemetry-layout">
+        <!-- LINHA DESTAQUE 1: PACE INSTANTÂNEO & DISTÂNCIA -->
+        <div class="hero-metrics-row">
+          <div class="hero-stat-card primary">
+            <div class="stat-header">
+              <span class="stat-icon">⚡</span>
+              <span class="stat-title">PACE DO MOMENTO</span>
+            </div>
+            <div class="stat-value-group">
+              <span class="stat-number hero-num" id="run-current-pace">--'--"</span>
+              <span class="stat-unit">/km</span>
+            </div>
+            <div class="stat-trend" id="run-pace-trend">Ritmo Instantâneo</div>
+          </div>
+
+          <div class="hero-stat-card secondary">
+            <div class="stat-header">
+              <span class="stat-icon">📍</span>
+              <span class="stat-title">DISTÂNCIA TOTAL</span>
+            </div>
+            <div class="stat-value-group">
+              <span class="stat-number hero-num" id="run-total-distance">0.00</span>
+              <span class="stat-unit">km</span>
+            </div>
+            <div class="stat-subdetail" id="run-distance-meters">0 m</div>
+          </div>
+        </div>
+
+        <!-- BARRA DE PROGRESSO DO QUILÔMETRO ATUAL -->
+        <div class="km-progress-bar-container">
+          <div class="km-progress-header">
+            <span class="km-progress-label" id="run-km-progress-label">Quilômetro 1 em andamento</span>
+            <span class="km-progress-val" id="run-km-progress-val">0 / 1000m (0%)</span>
+          </div>
+          <div class="km-progress-track">
+            <div class="km-progress-fill" id="run-km-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- GRID COM TODAS AS DEMAIS MÉTRICAS DE CORRIDA REQUISITADAS -->
+        <div class="metrics-grid-4">
+          <!-- Pace Total do Exercício -->
+          <div class="metric-card">
+            <span class="grid-label">🎯 PACE TOTAL MÉDIO</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-avg-pace">--'--"</span>
+              <span class="grid-unit">/km</span>
+            </div>
+          </div>
+
+          <!-- Pace do Quilômetro Atual -->
+          <div class="metric-card">
+            <span class="grid-label">🏁 PACE DO KM ATUAL</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-lap-pace">--'--"</span>
+              <span class="grid-unit">/km</span>
+            </div>
+          </div>
+
+          <!-- Velocidade Momentânea -->
+          <div class="metric-card">
+            <span class="grid-label">🚀 VEL. MOMENTÂNEA</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-current-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Velocidade Média do Treino -->
+          <div class="metric-card">
+            <span class="grid-label">📊 VEL. MÉDIA TOTAL</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-avg-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Velocidade do Km Atual -->
+          <div class="metric-card">
+            <span class="grid-label">⏱️ VEL. DO KM ATUAL</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-lap-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Calorias Estimadas -->
+          <div class="metric-card">
+            <span class="grid-label">🔥 CALORIAS</span>
+            <div class="grid-value">
+              <span class="grid-num" id="run-calories">0</span>
+              <span class="grid-unit">kcal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LAYOUT ESPECÍFICO PARA MODO BICICLETA (5 MÉTRICAS PRINCIPAIS EM TEMPO REAL) -->
+      <div id="telemetry-bike-layout" class="telemetry-layout" style="display: none;">
+        <!-- LINHA DESTAQUE 1: VELOCIDADE INSTANTÂNEA & DISTÂNCIA -->
+        <div class="hero-metrics-row bike-hero">
+          <div class="hero-stat-card primary bike-primary">
+            <div class="stat-header">
+              <span class="stat-icon">🚀</span>
+              <span class="stat-title">VELOCIDADE MOMENTÂNEA</span>
+            </div>
+            <div class="stat-value-group">
+              <span class="stat-number hero-num-bike" id="bike-current-speed">0.0</span>
+              <span class="stat-unit">km/h</span>
+            </div>
+            <div class="stat-trend" id="bike-speed-trend">Velocímetro em Tempo Real</div>
+          </div>
+
+          <div class="hero-stat-card secondary">
+            <div class="stat-header">
+              <span class="stat-icon">📍</span>
+              <span class="stat-title">DISTÂNCIA TOTAL</span>
+            </div>
+            <div class="stat-value-group">
+              <span class="stat-number hero-num" id="bike-total-distance">0.00</span>
+              <span class="stat-unit">km</span>
+            </div>
+            <div class="stat-subdetail" id="bike-distance-meters">0 m</div>
+          </div>
+        </div>
+
+        <!-- BARRA DE PROGRESSO DO QUILÔMETRO ATUAL (BIKE) -->
+        <div class="km-progress-bar-container">
+          <div class="km-progress-header">
+            <span class="km-progress-label" id="bike-km-progress-label">Quilômetro 1 em andamento</span>
+            <span class="km-progress-val" id="bike-km-progress-val">0 / 1000m (0%)</span>
+          </div>
+          <div class="km-progress-track">
+            <div class="km-progress-fill bike-fill" id="bike-km-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- GRID COM AS DEMAIS MÉTRICAS DE CICLISMO REQUISITADAS -->
+        <div class="metrics-grid-3">
+          <!-- Velocidade Média do Treino -->
+          <div class="metric-card">
+            <span class="grid-label">📊 VELOCIDADE MÉDIA</span>
+            <div class="grid-value">
+              <span class="grid-num" id="bike-avg-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Velocidade do Km Atual -->
+          <div class="metric-card">
+            <span class="grid-label">⏱️ VELOCIDADE DO KM ATUAL</span>
+            <div class="grid-value">
+              <span class="grid-num" id="bike-lap-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Velocidade Máxima -->
+          <div class="metric-card">
+            <span class="grid-label">⚡ VELOCIDADE MÁXIMA</span>
+            <div class="grid-value">
+              <span class="grid-num" id="bike-max-speed">0.0</span>
+              <span class="grid-unit">km/h</span>
+            </div>
+          </div>
+
+          <!-- Calorias Estimadas -->
+          <div class="metric-card">
+            <span class="grid-label">🔥 CALORIAS</span>
+            <div class="grid-value">
+              <span class="grid-num" id="bike-calories">0</span>
+              <span class="grid-unit">kcal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTÕES DE CONTROLE INFERIORES (PAUSAR, RETOMAR, FINALIZAR) -->
+      <div class="workout-action-bar">
+        <button id="btn-pause-workout" class="btn-action btn-pause" title="Pausar / Retomar Treino">
+          <svg class="action-svg" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <span id="btn-pause-text">PAUSAR</span>
+        </button>
+
+        <button id="btn-finish-workout" class="btn-action btn-finish" title="Finalizar Treino">
+          <div class="finish-progress-ring" id="finish-hold-ring"></div>
+          <svg class="action-svg" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          <span>FINALIZAR</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- OVERLAY DE BLOQUEIO DE TELA ATIVO -->
+    <div id="screen-lock-overlay" class="lock-overlay" style="display: none;">
+      <div class="lock-box">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">Tela Bloqueada</div>
+        <p class="lock-desc">Toques acidentais desativados durante a atividade.</p>
+        <button id="btn-unlock-screen" class="btn-unlock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>
+          Clique para Desbloquear
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 4. TELA DE RESUMO PÓS-TREINO & SPLITS POR KM             -->
+  <!-- ======================================================== -->
+  <section id="screen-summary" class="screen">
+    <div class="summary-container">
+      <!-- Header de Celebração -->
+      <div class="summary-celebrate-card">
+        <div class="trophy-badge">🏆</div>
+        <span class="celebrate-sub">Treino Concluído com Sucesso!</span>
+        <h2 class="celebrate-title" id="summary-workout-title">Corrida Matinal</h2>
+        <span class="celebrate-date" id="summary-workout-date">Hoje às 16:30</span>
+      </div>
+
+      <!-- Mini Mapa da Rota Percorrida -->
+      <div class="summary-map-box">
+        <div id="summary-map-container" class="summary-map"></div>
+        <div class="summary-map-overlay-badge" id="summary-sport-badge">🏃‍♂️ CORRIDA</div>
+      </div>
+
+      <!-- Grid de Métricas Principais -->
+      <div class="summary-stats-grid">
+        <div class="summary-stat-card">
+          <span class="sum-label">DISTÂNCIA TOTAL</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-total-dist">0.00</span>
+            <span class="sum-unit">km</span>
+          </div>
+        </div>
+
+        <div class="summary-stat-card">
+          <span class="sum-label">TEMPO TOTAL</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-total-time">00:00:00</span>
+          </div>
+        </div>
+
+        <div class="summary-stat-card" id="sum-pace-card">
+          <span class="sum-label">PACE MÉDIO</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-avg-pace">0'00"</span>
+            <span class="sum-unit">/km</span>
+          </div>
+        </div>
+
+        <div class="summary-stat-card">
+          <span class="sum-label">VELOCIDADE MÉDIA</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-avg-speed">0.0</span>
+            <span class="sum-unit">km/h</span>
+          </div>
+        </div>
+
+        <div class="summary-stat-card">
+          <span class="sum-label">VELOCIDADE MÁXIMA</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-max-speed">0.0</span>
+            <span class="sum-unit">km/h</span>
+          </div>
+        </div>
+
+        <div class="summary-stat-card">
+          <span class="sum-label">CALORIAS ESTIMADAS</span>
+          <div class="sum-val-group">
+            <span class="sum-num" id="sum-calories">0</span>
+            <span class="sum-unit">kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA E GRÁFICO DE SPLITS POR QUILÔMETRO -->
+      <div class="summary-section-box">
+        <div class="splits-header">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+            Desempenho por Quilômetro (Splits)
+          </h3>
+          <span class="splits-count-pill" id="splits-total-count">0 km registrados</span>
+        </div>
+
+        <div class="splits-list" id="splits-table-container">
+          <!-- Renderizado dinamicamente via JS -->
+          <div class="empty-splits">Nenhum split completo gravado.</div>
+        </div>
+      </div>
+
+      <!-- BOTÕES DE AÇÃO PÓS-TREINO -->
+      <div class="summary-action-buttons">
+        <button id="btn-download-gpx" class="btn-secondary-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar GPX (Strava)
+        </button>
+
+        <button id="btn-save-and-close" class="btn-primary-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Concluir e Salvar
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 5. MODAL DE HISTÓRICO DE ATIVIDADES                     -->
+  <!-- ======================================================== -->
+  <div id="modal-history" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">📊</div>
+          <h3>Histórico de Treinos</h3>
+        </div>
+        <button id="btn-close-history" class="btn-close-modal" aria-label="Fechar Modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Records Pessoais (PRs) -->
+        <div class="records-banner" id="records-banner">
+          <div class="record-item">
+            <span class="record-label">MAIOR DISTÂNCIA</span>
+            <span class="record-val" id="pr-longest-dist">0.0 km</span>
+          </div>
+          <div class="record-item">
+            <span class="record-label">MELHOR PACE 1KM</span>
+            <span class="record-val" id="pr-best-pace">--'--"</span>
+          </div>
+          <div class="record-item">
+            <span class="record-label">VEL. MÁXIMA BIKE</span>
+            <span class="record-val" id="pr-max-speed">0.0 km/h</span>
+          </div>
+        </div>
+
+        <!-- Lista de Treinos Salvos -->
+        <div class="history-list" id="history-items-container">
+          <!-- Renderizado dinamicamente -->
+          <div class="empty-history-state">
+            <div class="empty-icon">🏃‍♂️🚴</div>
+            <h4>Nenhum treino salvo ainda</h4>
+            <p>Seus treinos finalizados aparecerão aqui com gráficos e estatísticas completas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-clear-history" class="btn-danger-outline">Limpar Histórico</button>
+        <button id="btn-close-history-footer" class="btn-neutral">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 6. MODAL DE CONFIGURAÇÕES                                -->
+  <!-- ======================================================== -->
+  <div id="modal-settings" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">⚙️</div>
+          <h3>Configurações do App</h3>
+        </div>
+        <button id="btn-close-settings" class="btn-close-modal" aria-label="Fechar Configurações">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-group">
+          <h4>Preferências de Voz e Áudio</h4>
+          <label class="setting-item">
+            <span>Volume dos Avisos de Voz</span>
+            <input type="range" id="setting-voice-vol" min="0" max="1" step="0.1" value="1" class="custom-range">
+          </label>
+          <label class="setting-item">
+            <span>Beep sonoro de Contagem</span>
+            <input type="checkbox" id="setting-beeps" checked class="switch-input">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h4>Sensor GPS & Suavização</h4>
+          <label class="setting-item">
+            <span>Filtro anti-ruído GPS</span>
+            <input type="checkbox" id="setting-gps-filter" checked class="switch-input">
+            <span class="switch-slider"></span>
+          </label>
+          <p class="setting-hint">Remove oscilações quando você estiver parado no semáforo ou em áreas com prédios altos.</p>
+        </div>
+
+        <div class="settings-group">
+          <h4>Sobre o App</h4>
+          <div class="about-card">
+            <strong>PulseTracker Pro</strong>
+            <p>Versão 2.4.0 • Inspirado nos melhores recursos de telemetria Nike Run Club & Strava.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-close-settings-footer" class="btn-primary-action" style="width:100%">Salvar e Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 7. MODAL DE DADOS DO USUÁRIO (PERFIL COMPLETO & BIOMETRIA)-->
+  <!-- ======================================================== -->
+  <div id="modal-profile" class="modal-overlay" style="display: none;">
+    <div class="modal-card modal-profile-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">👤</div>
+          <h3>Perfil do Atleta</h3>
+        </div>
+        <button id="btn-close-profile" class="btn-close-modal" aria-label="Fechar Perfil">&times;</button>
+      </div>
+
+      <form id="form-user-profile" class="modal-body">
+        <!-- Foto de Perfil com Upload e Preview -->
+        <div class="profile-photo-section">
+          <div class="profile-photo-wrapper">
+            <img id="profile-photo-preview" src="" alt="Foto do Usuário" class="profile-photo-img" style="display: none;">
+            <div id="profile-photo-placeholder" class="profile-photo-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <label class="btn-upload-photo" title="Carregar Foto">
+              <input type="file" id="input-profile-photo" accept="image/*" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </label>
+          </div>
+          <div class="profile-photo-meta">
+            <strong>Foto do Perfil</strong>
+            <span>Toque no ícone da câmera para enviar sua foto</span>
+          </div>
+        </div>
+
+        <!-- Identificação -->
+        <div class="profile-form-grid">
+          <div class="form-group">
+            <label for="profile-name">Nome Completo</label>
+            <input type="text" id="profile-name" placeholder="Ex: Lucas Silva" class="custom-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-nickname">Apelido (Exibição)</label>
+            <input type="text" id="profile-nickname" placeholder="Ex: Luquinhas" class="custom-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-email">Email</label>
+            <input type="email" id="profile-email" placeholder="atleta@email.com" class="custom-input">
+          </div>
+
+          <div class="form-group">
+            <label for="profile-phone">Telefone / WhatsApp</label>
+            <input type="tel" id="profile-phone" placeholder="(11) 99999-9999" class="custom-input">
+          </div>
+        </div>
+
+        <!-- Dados Biométricos para Precisão das Calorias -->
+        <div class="biometrics-section-header">
+          <h4>Dados Biométricos (Para Cálculo de Calorias)</h4>
+          <p>Essas informações garantem o cálculo metabólico exato de queima calórica.</p>
+        </div>
+
+        <div class="profile-form-grid three-cols">
+          <div class="form-group">
+            <label for="profile-age">Idade (anos)</label>
+            <input type="number" id="profile-age" min="10" max="110" placeholder="Ex: 28" class="custom-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-weight">Peso (kg)</label>
+            <input type="number" id="profile-weight" step="0.5" min="30" max="250" placeholder="Ex: 72.5" class="custom-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-height">Altura (cm)</label>
+            <input type="number" id="profile-height" min="100" max="250" placeholder="Ex: 178" class="custom-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-gender">Sexo Biológico</label>
+            <select id="profile-gender" class="custom-input">
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-city">Cidade</label>
+            <input type="text" id="profile-city" placeholder="Ex: São Paulo" class="custom-input">
+          </div>
+
+          <div class="form-group">
+            <label for="profile-state">UF (Estado)</label>
+            <select id="profile-state" class="custom-input">
+              <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+              <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+              <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+              <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+              <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+              <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+              <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+              <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+              <option value="SP" selected>SP</option><option value="SE">SE</option><option value="TO">TO</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 0 0 0; margin-top: 10px;">
+          <button type="submit" id="btn-save-profile" class="btn-primary-action" style="width: 100%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Salvar Dados do Perfil
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 8. MODAL DE CONFIRMAÇÃO DE FINALIZAÇÃO (SEM WINDOW.CONFIRM)-->
+  <!-- ======================================================== -->
+  <div id="modal-confirm-finish" class="modal-overlay" style="display: none;">
+    <div class="modal-card modal-confirm-card">
+      <div class="confirm-icon-badge">🏁</div>
+      <h3 class="confirm-title">Finalizar Atividade?</h3>
+      <p class="confirm-desc">Seu treino será encerrado, a rota será salva no histórico e as estatísticas de splits serão geradas.</p>
+
+      <div class="confirm-action-buttons">
+        <button id="btn-cancel-finish" class="btn-cancel-action">
+          Continuar Treinando
+        </button>
+        <button id="btn-confirm-finish" class="btn-finish-confirm-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Sim, Finalizar e Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Modular Scripts -->
+  <script src="js/audio.js?v=2.6.0"></script>
+  <script src="js/telemetry.js?v=2.6.0"></script>
+  <script src="js/map.js?v=2.6.0"></script>
+  <script src="js/simulator.js?v=2.6.0"></script>
+  <script src="js/storage.js?v=2.6.0"></script>
+  <script src="js/app.js?v=2.6.0"></script>
+</body>
+</html>

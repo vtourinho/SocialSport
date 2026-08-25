@@ -1,0 +1,20 @@
+# Dependências e caches de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs e editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporários e backups
+*.tmp
+*.bak
